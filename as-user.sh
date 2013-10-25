@@ -99,6 +99,7 @@ sudo mkdir -p $SCALA_HOME
 sudo tar xzf /tmp/scala-src.tgz -C $SCALA_HOME
 SCALA_HOME=$SCALA_HOME/scala-2.10.3
 sudo sh -c 'echo "SCALA_HOME='$SCALA_HOME'" >> /etc/profile.d/scala-home-for-sources.sh'
+sudo sh -c 'echo "SCALA_HOME='$SCALA_HOME'" >> /etc/zsh/zprofile'
 
 # java sources
 # 'java home' for vimside
@@ -107,3 +108,4 @@ JZIP=$(dpkg -L openjdk-6-source | grep zip$)
 JZIP_LOC=$(dirname $JZIP)
 sudo unzip -qq $JZIP -d $JZIP_LOC
 sudo sh -c 'echo "JAVA_HOME='$JZIP_LOC'" >> /etc/profile.d/java-home-for-sources.sh'
+sudo sh -c 'echo "JAVA_HOME='$JZIP_LOC'" >> /etc/zsh/zprofile'
