@@ -19,6 +19,10 @@ apt install tmux
 apt install exuberant-ctags
 apt install netcat-traditional
 apt install openjdk-6-jdk
+apt install openjdk-6-source
+apt install libjansi-java
+apt install make
+apt install unzip
 
 echo "Now run the vagrant script..."
 su vagrant -c '/vagrant/as-user.sh'

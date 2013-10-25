@@ -1,6 +1,9 @@
-#!/bin/bash
+#!/bin/zsh
 
 echo "Home is $HOME"
+
+echo "Change default shell..."
+echo "vagrant" | chsh -s /bin/zsh
 
 GENESIS=$HOME/.genesis
 
@@ -9,73 +12,62 @@ ssh -T -o "VerifyHostKeyDNS yes" -o "StrictHostKeyChecking no" git@github.com
 # make myself available somewhere
 echo "meta"
 
-[[ -e $GENESIS ]] && echo \"Exists: $GENESIS\" || git clone --recursive git@github.com:opyate/genesis.git $GENESIS
-echo "Done with script"
+[[ -e $GENESIS ]] && echo \"Exists: $GENESIS\" || git clone git@github.com:opyate/genesis.git $GENESIS
 
 # SBT
 echo "sbt"
-curl -o /tmp/sbt.deb http://repo.scala-sbt.org/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.13.0/sbt.deb
-sudo dpkg -i /tmp/sbt.deb
+if which sbt; then
+	echo "SBT is installed"
+else
+	echo "Installing SBT"
+	curl -o /tmp/sbt.deb http://repo.scala-sbt.org/scalasbt/sbt-native-packages/org/scala-sbt/sbt/0.13.0/sbt.deb
+	sudo dpkg -i /tmp/sbt.deb
+fi
 
-# change the default shell
+# customise zsh
 echo "zsh"
 cd ~
-git clone --recursive git@github.com:opyate/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
+[[ -e $HOME/.zprezto ]] && echo "Exists: ~/.zprezto" || git clone --recursive git@github.com:opyate/prezto.git "${ZDOTDIR:-$HOME}/.zprezto"
 setopt EXTENDED_GLOB
 for rcfile in "${ZDOTDIR:-$HOME}"/.zprezto/runcoms/^README.md(.N); do
-	ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile:t}"
+	[[ -e "${ZDOTDIR:-$HOME}/.${rcfile:t}" ]] && echo "Exists: symlink ${ZDOTDIR:-$HOME}/.$rcfile" || ln -s "$rcfile" "${ZDOTDIR:-$HOME}/.${rcfile:t}"
 done
-chsh -s /bin/zsh
 
 # grab dotfiles
 echo "dotfiles"
-ln -s $GENESIS/dotfiles/.tmux.conf $HOME/.tmux.conf
-ln -s $GENESIS/dotfiles/.gitignore $HOME/.gitignore
-
-install_ensime=false
-# ensime
-if [ $instal_ensime == true ] ; then
-	echo "ensime"
-	ENSIME=$HOME/ensime
-	mkdir -p $ENSIME
-	curl -L -o /tmp/ensime.tgz https://www.dropbox.com/sh/ryd981hq08swyqr/ZiCwjjr_vm/ENSIME%20Releases/ensime_2.10.0-0.9.8.9.tar.gz
-	tar xzf /tmp/ensime.tgz -C $ENSIME
-	ENSIME=$ENSIME/ensime_2.10.0-0.9.8.9
-else
-	echo "skipping ensime pre-built"
-fi
+[[ -e $HOME/.tmux.conf ]] && echo "Exists $GENESIS/dotfiles/.tmux.conf" || ln -s $GENESIS/dotfiles/.tmux.conf $HOME/.tmux.conf
+[[ -e $HOME/.gitignore ]] && echo "Exists $GENESIS/dotfiles/.gitignore" || ln -s $GENESIS/dotfiles/.gitignore $HOME/.gitignore
 
 # set up vim
 echo "vim"
 mkdir -p ~/.vim/autoload ~/.vim/bundle
 curl -Sso ~/.vim/autoload/pathogen.vim https://raw.github.com/tpope/vim-pathogen/master/autoload/pathogen.vim
 
-ln -s $GENESIS/dotfiles/.vimrc $HOME/.vimrc
+[[ -e $HOME/.vimrc ]] && echo "Exists $GENESIS/dotfiles/.vimrc" || ln -s $GENESIS/dotfiles/.vimrc $HOME/.vimrc
 
-cd $HOME/.vim/bundle/
-git clone https://github.com/kien/ctrlp.vim.git
-git clone https://github.com/scrooloose/nerdtree.git
-git clone https://github.com/tpope/vim-sensible.git
-git clone https://github.com/derekwyatt/vim-scala.git
-
-# vimside (Vim Scala IDE)
-echo "vimside"
-declare -a repos=(
+# vim plugins
+echo "vim plugins"
+repos=(
 	"git://github.com/megaannum/self.git"
 	"git://github.com/megaannum/forms.git"
 	"git://github.com/Shougo/vimproc.git"
 	"git://github.com/Shougo/vimshell.git"
 	"git@github.com:opyate/ensime.git"
 	"-b matchlist git@github.com:opyate/vimside.git"
+	"https://github.com/kien/ctrlp.vim.git"
+	"https://github.com/scrooloose/nerdtree.git"
+	"https://github.com/tpope/vim-sensible.git"
+	"https://github.com/derekwyatt/vim-scala.git"
 );
 
 cd $HOME/.vim/bundle
 
 for repo in "${repos[@]}"; do
-	git clone $repo
+	reponame=$(echo $repo | sed -nr 's#^.*/(.*)\.git$#\1#p')
+	[[ -e $reponame ]] && echo "Repo $reponame exists" || git clone ${=repo}
 done; 
 
-cd vimproc
+cd $HOME/.vim/bundle/vimproc
 make
 
 cp $HOME/.vim/bundle/vimside/data/vimside/example_vimside.properties $HOME/.vim/bundle/vimside/data/vimside/vimside.properties
@@ -88,22 +80,30 @@ echo "ensime.install.path=$HOME/.vim/bundle/ensime" >> $HOME/.vim/bundle/vimside
 echo "ensime"
 cd $HOME/.vim/bundle/ensime
 sbt stage
-# see megaannum/vimside issue 25
-FAKENAME="ensime_2.10.2-0.0.0.0"
-mv dist_2.10.2 $FAKENAME
 
-echo "ensime.dist.dir=$FAKENAME" >> $HOME/.vim/bundle/vimside/data/vimside/vimside.properties
+echo "ensime.dist.dir=dist_2.10.2" >> $HOME/.vim/bundle/vimside/data/vimside/vimside.properties
 echo "ensime.config.file.name=ensime_config.vim" >> $HOME/.vim/bundle/vimside/data/vimside/vimside.properties 
-
-# 'scala home' for vimside
-curl -L -s -o /tmp/scala-src.tgz https://github.com/scala/scala/archive/v2.10.3.tar.gz
-SCALA_HOME=/usr/local/src/scala
-sudo mkdir -p $SCALA_HOME
-sudo tar xzf /tmp/scala-src.tgz -C $SCALA_HOME
-SCALA_HOME=$SCALA_HOME/scala-2.10.3
 
 
 # scala
 echo "scala"
 curl -s -o /tmp/scala.deb http://www.scala-lang.org/files/archive/scala-2.10.3.deb
 sudo dpkg -i /tmp/scala.deb
+
+# scala sources
+# 'scala home' for vimside
+echo "scala sources"
+curl -L -s -o /tmp/scala-src.tgz https://github.com/scala/scala/archive/v2.10.3.tar.gz
+SCALA_HOME=/usr/local/src/scala
+sudo mkdir -p $SCALA_HOME
+sudo tar xzf /tmp/scala-src.tgz -C $SCALA_HOME
+SCALA_HOME=$SCALA_HOME/scala-2.10.3
+sudo sh -c 'echo "SCALA_HOME='$SCALA_HOME'" >> /etc/profile.d/scala-home-for-sources.sh'
+
+# java sources
+# 'java home' for vimside
+echo "java sources"
+JZIP=$(dpkg -L openjdk-6-source | grep zip$)
+JZIP_LOC=$(dirname $JZIP)
+sudo unzip -qq $JZIP -d $JZIP_LOC
+sudo sh -c 'echo "JAVA_HOME='$JZIP_LOC'" >> /etc/profile.d/java-home-for-sources.sh'
