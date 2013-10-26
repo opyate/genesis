@@ -57,6 +57,7 @@ repos=(
 	"https://github.com/kien/ctrlp.vim.git"
 	"https://github.com/scrooloose/nerdtree.git"
 	"https://github.com/tpope/vim-sensible.git"
+	"https://github.com/tpope/vim-fugitive.git"
 	"https://github.com/derekwyatt/vim-scala.git"
 );
 
