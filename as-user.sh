@@ -24,6 +24,11 @@ else
 	sudo dpkg -i /tmp/sbt.deb
 fi
 
+# configure sbt
+mkdir -p $HOME/.sbt/plugins
+touch $HOME/.sbt/plugins/build.sbt
+echo "addSbtPlugin(\"org.ensime\" % \"ensime-sbt-cmd\" % \"0.1.0\")" >> $HOME/.sbt/plugins/build.sbt
+
 # customise zsh
 echo "zsh"
 cd ~
@@ -83,7 +88,7 @@ cd $HOME/.vim/bundle/ensime
 sbt stage
 
 echo "ensime.dist.dir=dist_2.10.2" >> $HOME/.vim/bundle/vimside/data/vimside/vimside.properties
-echo "ensime.config.file.name=ensime_config.vim" >> $HOME/.vim/bundle/vimside/data/vimside/vimside.properties 
+echo "ensime.config.file.name=.ensime" >> $HOME/.vim/bundle/vimside/data/vimside/vimside.properties 
 
 
 # scala
@@ -110,3 +115,5 @@ JZIP_LOC=$(dirname $JZIP)
 sudo unzip -qq $JZIP -d $JZIP_LOC
 sudo sh -c 'echo "JAVA_HOME='$JZIP_LOC'" >> /etc/profile.d/java-home-for-sources.sh'
 sudo sh -c 'echo "JAVA_HOME='$JZIP_LOC'" >> /etc/zsh/zprofile'
+
+echo "Now, go to your SBT project, run sbt, then enter command 'ensime generate'"
