@@ -42,6 +42,7 @@ done
 echo "dotfiles"
 [[ -e $HOME/.tmux.conf ]] && echo "Exists $GENESIS/dotfiles/.tmux.conf" || ln -s $GENESIS/dotfiles/.tmux.conf $HOME/.tmux.conf
 [[ -e $HOME/.gitignore ]] && echo "Exists $GENESIS/dotfiles/.gitignore" || ln -s $GENESIS/dotfiles/.gitignore $HOME/.gitignore
+git config --global core.excludesfile $HOME/.gitignore
 
 # set up vim
 echo "vim"
